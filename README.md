@@ -3,7 +3,7 @@ Send any files via mail.
 
 
 You need input data:
-
+<hr>
 15    addr_from = ""   
 <hr>
 16    password  = ""
@@ -22,4 +22,5 @@ You need input data:
 80               #"dir1_path"]    # If you need to send all files from a given folder, you need to specify it
 <hr>
 81 
+<hr>
 82 send_email(addr_to, "", "", files)
