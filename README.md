@@ -1,6 +1,6 @@
 # send_files_on_mail
 Send any files via mail.
-Sends files to mail.
+
 <hr>
 You need input data:
 
