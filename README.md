@@ -14,8 +14,12 @@ You need input data:
 75    addr_to   = "" 
 <hr>
 77    #files =[]               # List of files, if there are no attachments, then files=[]
+<hr>
 78     files = [r"C:\Users\...",
+<hr>
 79               r"C:\Users\..."]
+<hr>
 80               #"dir1_path"]    # If you need to send all files from a given folder, you need to specify it
+<hr>
 81 
 82 send_email(addr_to, "", "", files)
