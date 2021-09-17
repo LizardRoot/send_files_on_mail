@@ -1,82 +1,50 @@
-import smtplib                                              # Импортируем библиотеку по работе с SMTP
-import os                                                   # Функции для работы с операционной системой, не зависящие от используемой операционной системы
- 
-# Добавляем необходимые подклассы - MIME-типы
-import mimetypes                                            # Импорт класса для обработки неизвестных MIME-типов, базирующихся на расширении файла
-from email import encoders                                  # Импортируем энкодер
-from email.mime.base import MIMEBase                        # Общий тип
-from email.mime.text import MIMEText                        # Текст/HTML
-from email.mime.image import MIMEImage                      # Изображения
-from email.mime.audio import MIMEAudio                      # Аудио
-from email.mime.multipart import MIMEMultipart              # Многокомпонентный объект
- 
- 
-def send_email(addr_to, msg_subj, msg_text, files):
-    addr_from = ""                    # Отправитель
-    password  = ""                               # Пароль
- 
-    msg = MIMEMultipart()                                   # Создаем сообщение
-    msg['From']    = addr_from                              # Адресат
-    msg['To']      = addr_to                                # Получатель
-    msg['Subject'] = msg_subj                               # Тема сообщения
- 
-    body = msg_text                                         # Текст сообщения
-    msg.attach(MIMEText(body, 'plain'))                     # Добавляем в сообщение текст
- 
-    process_attachement(msg, files)
- 
-    #======== Этот блок настраивается для каждого почтового провайдера отдельно ===============================================
-    server = smtplib.SMTP('', 587)        # Создаем объект SMTP
-    server.starttls()                                        # Начинаем шифрованный обмен по TLS
-    server.set_debuglevel(True)                              # Включаем режим отладки, если не нужен - можно закомментировать
-    server.login(addr_from, password)                        # Получаем доступ
-    server.send_message(msg)                                 # Отправляем сообщение
-    server.quit()                                            # Выходим
-    #==========================================================================================================================
- 
-def process_attachement(msg, files):                                     # Функция по обработке списка, добавляемых к сообщению файлов
-    for f in files:
-        if os.path.isfile(f):                                            # Если файл существует
-            attach_file(msg,f)                                           # Добавляем файл к сообщению
-        elif os.path.exists(f):                                          # Если путь не файл и существует, значит - папка
-            dir = os.listdir(f)                                          # Получаем список файлов в папке
-            for file in dir:                                             # Перебираем все файлы и...
-                attach_file(msg,f+"/"+file)                              # ...добавляем каждый файл к сообщению
- 
-def attach_file(msg, filepath):                                          # Функция по добавлению конкретного файла к сообщению
-    filename = os.path.basename(filepath)                                # Получаем только имя файла
-    ctype, encoding = mimetypes.guess_type(filepath)                     # Определяем тип файла на основе его расширения
-    if ctype is None or encoding is not None:                            # Если тип файла не определяется
-        ctype = 'application/octet-stream'                               # Будем использовать общий тип
-    maintype, subtype = ctype.split('/', 1)                              # Получаем тип и подтип
-    if maintype == 'text':                                               # Если текстовый файл
-        with open(filepath, encoding="utf-8", errors='ignore') as fp:    # Открываем файл для чтения
-            file = MIMEText(fp.read(), _subtype=subtype)                 # Используем тип MIMEText
-            fp.close()                                                   # После использования файл обязательно нужно закрыть
-    elif maintype == 'image':                                            # Если изображение
-        with open(filepath, 'rb') as fp:
-            file = MIMEImage(fp.read(), _subtype=subtype)
-            fp.close()
-    elif maintype == 'audio':                                                  # Если аудио
-        with open(filepath, 'rb') as fp:
-            file = MIMEAudio(fp.read(), _subtype=subtype)
-            fp.close()
-    else:                                                                      # Неизвестный тип файла
-        with open(filepath, 'rb') as fp:
-            file = MIMEBase(maintype, subtype)                                 # Используем общий MIME-тип
-            file.set_payload(fp.read())                                        # Добавляем содержимое общего типа (полезную нагрузку)
-            fp.close()
-            encoders.encode_base64(file)                                       # Содержимое должно кодироваться как Base64
-    file.add_header('Content-Disposition', 'attachment', filename=filename)    # Добавляем заголовки
-    msg.attach(file)                                                           # Присоединяем файл к сообщению
- 
- 
-# Использование функции send_email()
-addr_to   = ""                                # Получатель
- 
-#files =[]    # Список файлов, если вложений нет, то files=[]
-files = [r"C:\Users\...",
-         r"C:\Users\..."]
-         #"dir1_path"] # Если нужно отправить все файлы из заданной папки, нужно указать её
- 
-send_email(addr_to, "", "", files)
+import email, smtplib, ssl
+
+from email import encoders
+from email.mime.base import MIMEBase
+from email.mime.multipart import MIMEMultipart
+from email.mime.text import MIMEText
+
+subject = "An email with attachment from Python"
+body = "This is an email with attachment sent from Python"
+sender_email = ""
+receiver_email = ""
+password = ""
+
+# Create a multipart message and set headers
+message = MIMEMultipart()
+message["From"] = sender_email
+message["To"] = receiver_email
+message["Subject"] = subject
+message["Bcc"] = receiver_email  # Recommended for mass emails
+
+# Add body to email
+message.attach(MIMEText(body, "plain"))
+
+filename = "pass.txt"  # In same directory as script
+
+# Open PDF file in binary mode
+with open(filename, "rb") as attachment:
+    # Add file as application/octet-stream
+    # Email client can usually download this automatically as attachment
+    part = MIMEBase("application", "octet-stream")
+    part.set_payload(attachment.read())
+
+# Encode file in ASCII characters to send by email    
+encoders.encode_base64(part)
+
+# Add header as key/value pair to attachment part
+part.add_header(
+    "Content-Disposition",
+    f"attachment; filename= {filename}",
+)
+
+# Add attachment to message and convert message to string
+message.attach(part)
+text = message.as_string()
+
+# Log in to server using secure context and send email
+context = ssl.create_default_context()
+with smtplib.SMTP_SSL("smtp.gmail.com", 465, context=context) as server:
+    server.login(sender_email, password)
+    server.sendmail(sender_email, receiver_email, text)
